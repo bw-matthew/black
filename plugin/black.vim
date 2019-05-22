@@ -60,7 +60,16 @@ def _get_pip(venv_path):
 def _get_virtualenv_site_packages(venv_path, pyver):
   if sys.platform[:3] == "win":
     return venv_path / 'Lib' / 'site-packages'
-  return venv_path / 'lib' / f'python{pyver[0]}.{pyver[1]}' / 'site-packages'
+  path = venv_path / 'lib' / f'python{pyver[0]}.{pyver[1]}' / 'site-packages'
+  if not path.exists():
+    paths = list((venv_path / 'lib').glob('python*/site-packages/black'))
+    if paths:
+      path = paths[0].parent
+    else:
+      paths = list((venv_path / 'lib').glob('python*/site-packages'))
+      if paths:
+        path = paths[0].parent
+  return path
 
 def _initialize_black_env(upgrade=False):
   pyver = sys.version_info[:2]
@@ -95,6 +104,7 @@ def _initialize_black_env(upgrade=False):
   if first_install:
     print('Pro-tip: to upgrade Black in the future, use the :BlackUpgrade command and restart Vim.\n')
   if sys.path[0] != virtualenv_site_packages:
+    print(f'Added {virtualenv_site_packages} to sys.path')
     sys.path.insert(0, virtualenv_site_packages)
   return True
 
